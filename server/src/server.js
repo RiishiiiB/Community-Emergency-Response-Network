@@ -12,6 +12,8 @@ import alertRoutes from "./routes/alertRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import { registerAlertSocket } from "./socket/alertSocket.js";
 
+const port = process.env.PORT || 5000;
+console.log("CLIENT_URL =", process.env.CLIENT_URL);
 const app = express();
 const server = createServer(app);
 const port = process.env.PORT || 5000;
