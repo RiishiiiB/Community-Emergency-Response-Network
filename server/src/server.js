@@ -43,12 +43,11 @@ app.use((req, res, next) => {
 app.use(helmet());
 
 app.use((req, res, next) => {
-  console.log("Origin:", req.headers.origin);
+  const origin = req.headers.origin;
 
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://community-emergency-response-network.vercel.app"
-  );
+  if (origin) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
 
   res.header(
     "Access-Control-Allow-Methods",
@@ -71,7 +70,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 //app.use(
   //cors({
     //origin: allowedOrigins,
