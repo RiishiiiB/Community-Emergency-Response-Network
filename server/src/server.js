@@ -30,7 +30,18 @@ const io = new Server(server, {
 app.set("io", io);
 app.set("trust proxy", 1);
 
+app.use((req, res, next) => {
+  console.log("Origin:", req.headers.origin);
+
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  res.header("Access-Control-Allow-Methods", "*");
+
+  next();
+});
+
 app.use(helmet());
+
 app.use(
   cors({
     origin: allowedOrigins,
