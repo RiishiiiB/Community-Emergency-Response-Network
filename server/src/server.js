@@ -42,12 +42,42 @@ app.use((req, res, next) => {
 
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true
-  })
-);
+app.use((req, res, next) => {
+  console.log("Origin:", req.headers.origin);
+
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://community-emergency-response-network.vercel.app"
+  );
+
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
+
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization"
+  );
+
+  res.header(
+    "Access-Control-Allow-Credentials",
+    "true"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+//app.use(
+  //cors({
+    //origin: allowedOrigins,
+   // credentials: true
+ // })
+//);
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(
