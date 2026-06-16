@@ -29,10 +29,28 @@ function hasCoordinates(location = {}) {
   return typeof location.lat === "number" && typeof location.lng === "number";
 }
 
-export default function AlertCard({ alert, busy, onAcknowledge, onResolve, user }) {
-  const canAcknowledge = alert.status === "active" && !alert.assignedResponder;
+export default function AlertCard({
+  alert,
+  busy,
+  onAcknowledge,
+  onResolve,
+  user
+}) {
+  const canAcknowledge =
+    user?.role !== "citizen" &&
+    alert.status === "active" &&
+    !alert.assignedResponder;
+
   const canResolve = alert.status !== "resolved";
-  const latestTimeline = [...(alert.timeline || [])].reverse().slice(0, 3);
+
+  const latestTimeline = [...(alert.timeline || [])]
+    .reverse()
+    .slice(0, 3);
+
+  const resolvedInfo =
+    alert.status === "resolved" &&
+    alert.resolvedByUser &&
+    alert.resolvedByRole;
 
   return (
     <article className={`alert-card ${alert.severity}`}>
@@ -45,35 +63,60 @@ export default function AlertCard({ alert, busy, onAcknowledge, onResolve, user 
           </div>
           <h3>{alert.title}</h3>
         </div>
+
         <StatusPill status={alert.status} />
       </header>
 
-      {alert.description ? <p className="alert-description">{alert.description}</p> : null}
+      {alert.description ? (
+        <p className="alert-description">
+          {alert.description}
+        </p>
+      ) : null}
 
       <div className="alert-meta">
         <span>
           <Clock3 size={15} aria-hidden="true" />
           {formatDate(alert.createdAt)}
         </span>
+
         <span>
           <UserRound size={15} aria-hidden="true" />
-          {alert.citizen?.name || alert.contact?.name || "Citizen"}
+          {alert.citizen?.name ||
+            alert.contact?.name ||
+            "Citizen"}
         </span>
+
         {alert.contact?.phone || alert.citizen?.phone ? (
-          <a href={`tel:${alert.contact?.phone || alert.citizen?.phone}`}>
+          <a
+            href={`tel:${
+              alert.contact?.phone ||
+              alert.citizen?.phone
+            }`}
+          >
             <Phone size={15} aria-hidden="true" />
-            {alert.contact?.phone || alert.citizen?.phone}
+            {alert.contact?.phone ||
+              alert.citizen?.phone}
           </a>
         ) : null}
       </div>
 
       <div className="location-row">
         <MapPin size={17} aria-hidden="true" />
+
         <div>
-          <strong>{alert.location?.address || "Location pending"}</strong>
+          <strong>
+            {alert.location?.address ||
+              "Location pending"}
+          </strong>
+
           {hasCoordinates(alert.location) ? (
-            <a href={alert.location.mapsUrl} target="_blank" rel="noreferrer">
-              {alert.location.lat.toFixed(4)}, {alert.location.lng.toFixed(4)}
+            <a
+              href={alert.location.mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {alert.location.lat.toFixed(4)},{" "}
+              {alert.location.lng.toFixed(4)}
             </a>
           ) : (
             <span>No coordinates shared</span>
@@ -81,10 +124,22 @@ export default function AlertCard({ alert, busy, onAcknowledge, onResolve, user 
         </div>
       </div>
 
+      {resolvedInfo ? (
+        <div className="assigned-row">
+          <CheckCircle2 size={16} aria-hidden="true" />
+          <span>
+            Resolved by {alert.resolvedByUser} (
+            {alert.resolvedByRole})
+          </span>
+        </div>
+      ) : null}
+
       {alert.assignedResponder ? (
         <div className="assigned-row">
           <ShieldCheck size={16} aria-hidden="true" />
-          <span>Assigned to {alert.assignedResponder.name}</span>
+          <span>
+            Assigned to {alert.assignedResponder.name}
+          </span>
         </div>
       ) : null}
 
@@ -93,12 +148,19 @@ export default function AlertCard({ alert, busy, onAcknowledge, onResolve, user 
           {latestTimeline.map((item) => (
             <li key={`${item.status}-${item.at}`}>
               <span />
+
               <div>
                 <strong>{item.message}</strong>
+
                 <small>
-                  <span className={`action-chip ${item.action || "note"}`}>
+                  <span
+                    className={`action-chip ${
+                      item.action || "note"
+                    }`}
+                  >
                     {item.action || "note"}
                   </span>
+
                   {formatDate(item.at)}
                 </small>
               </div>
@@ -114,21 +176,34 @@ export default function AlertCard({ alert, busy, onAcknowledge, onResolve, user 
               className="secondary-button"
               type="button"
               disabled={busy}
-              onClick={() => onAcknowledge(alert._id)}
+              onClick={() =>
+                onAcknowledge(alert._id)
+              }
             >
-              <ShieldCheck size={16} aria-hidden="true" />
+              <ShieldCheck
+                size={16}
+                aria-hidden="true"
+              />
               Accept
             </button>
           ) : null}
+
           {canResolve ? (
             <button
               className="primary-button compact"
               type="button"
               disabled={busy}
-              onClick={() => onResolve(alert._id)}
+              onClick={() =>
+                onResolve(alert._id)
+              }
             >
-              <CheckCircle2 size={16} aria-hidden="true" />
-              Resolve
+              <CheckCircle2
+                size={16}
+                aria-hidden="true"
+              />
+              {user?.role === "citizen"
+                ? "Mark Safe"
+                : "Resolve"}
             </button>
           ) : null}
         </footer>
