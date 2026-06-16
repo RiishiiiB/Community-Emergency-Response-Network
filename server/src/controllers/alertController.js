@@ -59,11 +59,26 @@ export const getAlerts = asyncHandler(async (req, res) => {
 });
 
 export const getStats = asyncHandler(async (req, res) => {
-  const [active, acknowledged, resolved, total] = await Promise.all([
+  const [
+    active,
+    acknowledged,
+    resolved,
+    total,
+    citizenResolved,
+    responderResolved
+  ] = await Promise.all([
     Alert.countDocuments({ status: "active" }),
     Alert.countDocuments({ status: "acknowledged" }),
     Alert.countDocuments({ status: "resolved" }),
-    Alert.countDocuments({})
+    Alert.countDocuments({}),
+    Alert.countDocuments({
+      status: "resolved",
+      resolvedByRole: "citizen"
+    }),
+    Alert.countDocuments({
+      status: "resolved",
+      resolvedByRole: "responder"
+    })
   ]);
 
   res.json({
@@ -71,7 +86,9 @@ export const getStats = asyncHandler(async (req, res) => {
       active,
       acknowledged,
       resolved,
-      total
+      total,
+      citizenResolved,
+      responderResolved
     }
   });
 });
@@ -110,9 +127,12 @@ export const createAlert = asyncHandler(async (req, res) => {
   });
 
   const populatedAlert = await populateAlert(alert);
+
   emitAlert(req, "alert:new", populatedAlert);
 
-  res.status(201).json({ alert: populatedAlert });
+  res.status(201).json({
+    alert: populatedAlert
+  });
 });
 
 export const acknowledgeAlert = asyncHandler(async (req, res) => {
@@ -120,7 +140,10 @@ export const acknowledgeAlert = asyncHandler(async (req, res) => {
     {
       _id: req.params.id,
       status: { $ne: "resolved" },
-      $or: [{ assignedResponder: { $exists: false } }, { assignedResponder: null }]
+      $or: [
+        { assignedResponder: { $exists: false } },
+        { assignedResponder: null }
+      ]
     },
     {
       $set: {
@@ -147,16 +170,25 @@ export const acknowledgeAlert = asyncHandler(async (req, res) => {
     }
 
     if (existingAlert.status === "resolved") {
-      throw new AppError("Resolved alerts cannot be acknowledged", 400);
+      throw new AppError(
+        "Resolved alerts cannot be acknowledged",
+        400
+      );
     }
 
-    throw new AppError("This alert has already been assigned to a responder", 409);
+    throw new AppError(
+      "This alert has already been assigned to a responder",
+      409
+    );
   }
 
   const populatedAlert = await populateAlert(alert);
+
   emitAlert(req, "alert:update", populatedAlert);
 
-  res.json({ alert: populatedAlert });
+  res.json({
+    alert: populatedAlert
+  });
 });
 
 export const resolveAlert = asyncHandler(async (req, res) => {
@@ -173,17 +205,28 @@ export const resolveAlert = asyncHandler(async (req, res) => {
   const note = req.body.note?.trim();
 
   alert.status = "resolved";
+
+  // NEW FIELDS
+  alert.resolvedByRole = req.user.role;
+  alert.resolvedByUser = req.user.name;
   alert.resolvedAt = new Date();
+
   alert.timeline.push({
     status: "resolved",
     action: "resolver",
-    message: note || `${req.user.name} resolved the alert as responder`,
+    message:
+      note ||
+      `${req.user.name} resolved the alert as ${req.user.role}`,
     actor: req.user._id
   });
 
   await alert.save();
+
   const populatedAlert = await populateAlert(alert);
+
   emitAlert(req, "alert:update", populatedAlert);
 
-  res.json({ alert: populatedAlert });
+  res.json({
+    alert: populatedAlert
+  });
 });
